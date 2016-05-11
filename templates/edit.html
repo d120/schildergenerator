@@ -40,6 +40,20 @@
            </select>
            <textarea name="text" id="form:text" cols="35" rows="5"><py:if test="defined('form')">${form.text}</py:if></textarea>
         </div><br/>
+        
+        
+        <div class="box">
+           <label for="form:footer_text" style="width:140px;display:inline-block;">Footer Text</label>
+           <input name="footer_text" id="form:footer_text" size="80" py:attrs="{ 'value': form.footer_text } if defined('form') else { 'value': default_footer_text }"/><br/>
+        
+           <label for="form:footer_image" style="width:140px;display:inline-block;">Footer Image</label>
+           <select name="footer_image" style="float:none;">
+                <option py:for="footer_img in footer_images"
+                    py:attrs="{ 'selected' : 'True' if defined('form') and form.footer_image == footer_img else None, 'value' : footer_img }">${footer_img}</option>
+           </select>
+        </div><br/>
+        
+        
         <div class="box imageselect">
         <label for="form:img">Wähle ein Bild (falls auf Vorlage anwendbar):</label>
         <ul>

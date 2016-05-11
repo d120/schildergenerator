@@ -82,6 +82,15 @@ def save_data(formdata, outfilename):
         json.dump(formdata, outfile)
     
 def run_pdflatex(context, outputfilename, overwrite=True):
+    if context.has_key('footer_text') and context.has_key('footer_image'):
+        context['extra_head'] = ("\\setbeamertemplate{footline}{\\hskip.5cm \n" +
+        "" + context['footer_text'] + "\\hfill\n" +
+        "\\includegraphics[width=.2\\textwidth]{support/" + context['footer_image'] + "}\n" +
+        "\\hskip.5cm~\n" +
+        "\\vskip.5cm\n" +
+        "} ")
+    else:
+        context['extra_head'] = ''
     if not context.has_key('textemplate'):
         context['textemplate'] = "text-image-quer.tex"
     genshitex = TemplateLoader([config.textemplatedir])
@@ -92,6 +101,7 @@ def run_pdflatex(context, outputfilename, overwrite=True):
     if context['markup'] == 'rst':
         context['text'] = publish_parts(context['text'], writer_name='latex')['body']
         #context['headline'] = publish_parts(context['headline'], writer_name='latex')['body']
+    context['footer_text'] = publish_parts(context['footer_text'], writer_name='latex')['body']
     tmpdir = tempfile.mkdtemp(dir=config.tmpdir)
     if context.has_key('img') and context['img'] and context['img'] != '__none':
         try:
@@ -171,8 +181,15 @@ def index(**kwargs):
 def edit(**kwargs):
     data = defaultdict(str)
     data.update(**kwargs)
+    
     imagelist = sorted(glob.glob(config.imagedir + '/*.png'))
     data['images'] = [os.path.basename(f) for f in imagelist]
+    
+    footer_images = sorted(glob.glob(config.textemplatedir + '/support/*.jpg'))
+    data['footer_images'] = [os.path.basename(f) for f in footer_images]
+    
+    data['default_footer_text'] = config.default_footer_text
+    
     templatelist = glob.glob(config.textemplatedir + '/*.tex')
     data['templates'] = [unicode(os.path.basename(f))
                          for f in sorted(templatelist)]
@@ -189,7 +206,7 @@ def edit_one(filename):
 def create():
     if request.method == 'POST':
         formdata = defaultdict(str, request.form.to_dict(flat=True))
-        for a in ('headline', 'text'):
+        for a in ('headline', 'text', 'footer_text'):
             formdata[a] = unicode(formdata[a])
         try:
             imgpath = save_and_convert_image_upload('imgupload')
