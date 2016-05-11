@@ -83,6 +83,7 @@ def save_data(formdata, outfilename):
     
 def run_pdflatex(context, outputfilename, overwrite=True):
     if context.has_key('footer_text') and context.has_key('footer_image'):
+        context['footer_text'] = publish_parts(context['footer_text'], writer_name='latex')['body']
         context['extra_head'] = ("\\setbeamertemplate{footline}{\\hskip.5cm \n" +
         "" + context['footer_text'] + "\\hfill\n" +
         "\\includegraphics[width=.2\\textwidth]{support/" + context['footer_image'] + "}\n" +
@@ -101,7 +102,6 @@ def run_pdflatex(context, outputfilename, overwrite=True):
     if context['markup'] == 'rst':
         context['text'] = publish_parts(context['text'], writer_name='latex')['body']
         #context['headline'] = publish_parts(context['headline'], writer_name='latex')['body']
-    context['footer_text'] = publish_parts(context['footer_text'], writer_name='latex')['body']
     tmpdir = tempfile.mkdtemp(dir=config.tmpdir)
     if context.has_key('img') and context['img'] and context['img'] != '__none':
         try:
@@ -335,7 +335,7 @@ def tplthumbnail(tplname, maxgeometry):
              }, pdfpath, overwrite=False
         )
     except Exception as e:
-        return str(e)
+        return "Fehler: "+str(e)
     else:
         thumbpath = make_thumb(pdfpath, maxgeometry)
         with open(thumbpath, 'r') as imgfile:
