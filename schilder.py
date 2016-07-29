@@ -84,7 +84,7 @@ def save_data(formdata, outfilename):
 def run_pdflatex(context, outputfilename, overwrite=True):
     if context.has_key('footer_text') and context.has_key('footer_image'):
         context['footer_text'] = publish_parts(context['footer_text'], writer_name='latex')['body']
-        context['extra_head'] = ("\\setbeamertemplate{footline}{\\hskip.5cm \n" +
+        context['extra_head'] = ("\\setbeamertemplate{footline}{\\hskip1cm " +
         "" + context['footer_text'] + "\\hfill\n" +
         "\\includegraphics[width=.2\\textwidth]{support/" + context['footer_image'] + "}\n" +
         "\\hskip.5cm~\n" +
