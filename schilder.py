@@ -25,7 +25,7 @@ app = Flask(__name__)
 app.config.update(
     UPLOAD_FOLDER = config.uploaddir,
     PROPAGATE_EXCEPTIONS = True,
-    MAX_CONTENT_LENGTH = 8388608L
+    MAX_CONTENT_LENGTH = 8388608
 )
 app.secret_key = config.app_secret
 genshi = Genshi(app)
@@ -82,7 +82,7 @@ def save_data(formdata, outfilename):
         json.dump(formdata, outfile)
     
 def run_pdflatex(context, outputfilename, overwrite=True):
-    if context.has_key('footer_text') and context.has_key('footer_image'):
+    if 'footer_text' in context and 'footer_image' in context:
         context['footer_text'] = publish_parts(context['footer_text'], writer_name='latex')['body']
         context['extra_head'] = ("\\setbeamertemplate{footline}{\\hskip1cm " +
         "" + context['footer_text'] + "\\hfill\n" +
@@ -92,7 +92,7 @@ def run_pdflatex(context, outputfilename, overwrite=True):
         "} ")
     else:
         context['extra_head'] = ''
-    if not context.has_key('textemplate'):
+    if 'textemplate' not in context:
         context['textemplate'] = "text-image-quer.tex"
     genshitex = TemplateLoader([config.textemplatedir])
     template = genshitex.load(
@@ -103,7 +103,7 @@ def run_pdflatex(context, outputfilename, overwrite=True):
         context['text'] = publish_parts(context['text'], writer_name='latex')['body']
         #context['headline'] = publish_parts(context['headline'], writer_name='latex')['body']
     tmpdir = tempfile.mkdtemp(dir=config.tmpdir)
-    if context.has_key('img') and context['img'] and context['img'] != '__none':
+    if 'img' in context and context['img'] and context['img'] != '__none':
         try:
             shutil.copy(os.path.join(config.imagedir, context['img']), 
                         os.path.join(tmpdir, context['img']))
@@ -127,7 +127,7 @@ def run_pdflatex(context, outputfilename, overwrite=True):
             try:
                 flash(Markup("<p>PDFLaTeX Output:</p><pre>%s</pre>" % e.output), 'log')
             except:
-                print(e.output)
+                print((e.output))
         raise SyntaxWarning("PDFLaTeX bailed out")
     finally:
         os.chdir(cwd)
@@ -173,7 +173,7 @@ def index(**kwargs):
     data = defaultdict(str)
     data.update(**kwargs)
     filelist = glob.glob(config.datadir + '/*.schild')
-    data['files'] = [unicode(os.path.basename(f)) for f in sorted(filelist)]
+    data['files'] = [str(os.path.basename(f)) for f in sorted(filelist)]
     return render_response('index.html', data)
 
 
@@ -191,7 +191,7 @@ def edit(**kwargs):
     data['default_footer_text'] = config.default_footer_text
     
     templatelist = glob.glob(config.textemplatedir + '/*.tex')
-    data['templates'] = [unicode(os.path.basename(f))
+    data['templates'] = [str(os.path.basename(f))
                          for f in sorted(templatelist)]
     data['imageextensions'] = config.allowed_extensions
     return render_response('edit.html', data)
@@ -207,7 +207,7 @@ def create():
     if request.method == 'POST':
         formdata = defaultdict(str, request.form.to_dict(flat=True))
         for a in ('headline', 'text', 'footer_text'):
-            formdata[a] = unicode(formdata[a])
+            formdata[a] = str(formdata[a])
         try:
             imgpath = save_and_convert_image_upload('imgupload')
             if imgpath is not None:
@@ -222,18 +222,18 @@ def create():
             save_data(formdata, outfilename)
             run_pdflatex(formdata, os.path.join(config.pdfdir, outpdfname))
             try:
-                flash(Markup(u"""PDF created and data saved. You might create another one. Here's a preview. Click to print.<br/>
+                flash(Markup("""PDF created and data saved. You might create another one. Here's a preview. Click to print.<br/>
                                 <a href="%s"><img src="%s"/></a>""" %
                          (url_for('schild', filename=outfilename), url_for(
                              'pdfthumbnail', pdfname=outpdfname, maxgeometry=200))
                          ))
             except:
-                print("%s created" % outpdfname)
+                print(("%s created" % outpdfname))
         except Exception as e:
             try:
-                flash(u"Could not create pdf or save data: %s" % str(e), 'error')
+                flash("Could not create pdf or save data: %s" % str(e), 'error')
             except:
-                print("Could not create pdf or save data: %s" % str(e))
+                print(("Could not create pdf or save data: %s" % str(e)))
 
         data = {'form': formdata}
         imagelist = glob.glob(config.imagedir + '/*.png')
@@ -253,7 +253,7 @@ def create():
 
 @app.route('/schild/<filename>')
 def schild(filename):
-    return render_response('schild.html', {'filename': filename, 'printer': [unicode(f) for f in sorted(config.printers.keys())]})
+    return render_response('schild.html', {'filename': filename, 'printer': [str(f) for f in sorted(config.printers.keys())]})
 
 
 @app.route('/printout', methods=['POST'])
@@ -266,11 +266,11 @@ def printout():
         try:
             lprout = check_output(['lpr', '-H', str(config.printserver), '-P', str(
                 printer), '-#', str(copies)] + config.lproptions + [filename], stderr=STDOUT)
-            flash(u'Schild wurde zum Drucker geschickt!')
+            flash('Schild wurde zum Drucker geschickt!')
         except CalledProcessError as e:
             flash(Markup("<p>Could not print:</p><pre>%s</pre>" % e.output), 'error')
     else:
-        flash(u'Ungültige Anzahl Kopien!')
+        flash('Ungültige Anzahl Kopien!')
     return redirect(url_for('index'))
 
 def delete_file(filename):
@@ -278,10 +278,10 @@ def delete_file(filename):
         os.unlink(os.path.join(config.datadir, filename))
         for f in glob.glob(os.path.join(config.pdfdir, filename + '.pdf*')):
             os.unlink(f)
-        flash(u"Schild %s wurde gelöscht" % filename)
+        flash("Schild %s wurde gelöscht" % filename)
         return redirect(url_for('index'))
     except:
-        flash(u"Schild %s konnte nicht gelöscht werden." % filename, 'error')
+        flash("Schild %s konnte nicht gelöscht werden." % filename, 'error')
         return redirect(url_for('schild', filename=filename))
 
 
@@ -329,8 +329,8 @@ def tplthumbnail(tplname, maxgeometry):
         run_pdflatex(
             {'textemplate': secure_filename(tplname),
              'img': 'pictograms-nps-misc-camera.png',
-             'headline': u'Überschrift',
-             'text': u'Dies ist der Text, der in der UI als Text bezeichnet ist.',
+             'headline': 'Überschrift',
+             'text': 'Dies ist der Text, der in der UI als Text bezeichnet ist.',
              'markup': 'latex',
              }, pdfpath, overwrite=False
         )
@@ -355,13 +355,13 @@ def recreate_cache():
              glob.glob(os.path.join(config.imagedir, '*.png.*'))):
         try:
             os.unlink(filename)
-            print("Deleted %s" % filename)
+            print(("Deleted %s" % filename))
         except Exception as e:
-            print("Could not delete %s: %s" % (filename, str(e)))
+            print(("Could not delete %s: %s" % (filename, str(e))))
     for filename in glob.glob(os.path.join(config.datadir, '*.schild')):
         data = load_data(filename)
         pdfname = os.path.join(config.pdfdir, data['pdfname'])
-        print("Recreating %s" % pdfname)
+        print(("Recreating %s" % pdfname))
         run_pdflatex(data, pdfname)
 
 if __name__ == '__main__':
